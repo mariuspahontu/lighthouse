@@ -26,7 +26,7 @@ const LR_PRESETS = {
  * @param {string} url
  * @param {LH.Flags} flags Lighthouse flags
  * @param {{lrDevice?: 'desktop'|'mobile', categoryIDs?: Array<string>, logAssets: boolean, configOverride?: LH.Config.Json}} lrOpts Options coming from Lightrider
- * @return {Promise<string|void>}
+ * @return {Promise<string>}
  */
 async function runLighthouseInLR(connection, url, flags, lrOpts) {
   const {lrDevice, categoryIDs, logAssets, configOverride} = lrOpts;
@@ -38,6 +38,7 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
   flags.disableStorageReset = true;
   flags.logLevel = flags.logLevel || 'info';
   flags.channel = 'lr';
+  // flags.output assumed to be unset by Lightrider
 
   let config;
   if (configOverride) {
@@ -52,21 +53,17 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
 
   try {
     const runnerResult = await lighthouse(url, flags, config, connection);
-    if (!runnerResult) return;
+    if (!runnerResult) throw new Error('Lighthouse finished without a runnerResult');
 
-    // pre process the LHR for proto
-    if (flags.output === 'json' && typeof runnerResult.report === 'string') {
-      // When LR is called with |internal: {keep_raw_response: true, save_lighthouse_assets: true}|,
-      // this code will log artifacts to raw_response.artifacts.
-      if (logAssets) {
-        // @ts-ignore - Regenerate the report, but tack on the artifacts.
-        runnerResult.lhr.artifacts = runnerResult.artifacts;
-      }
-
-      return JSON.stringify(preprocessor.processForProto(runnerResult.lhr));
+    // When LR is called with |internal: {keep_raw_response: true, save_lighthouse_assets: true}|,
+    // this code will log artifacts to raw_response.artifacts.
+    if (logAssets) {
+      // @ts-ignore - Regenerate the report, but tack on the artifacts.
+      runnerResult.lhr.artifacts = runnerResult.artifacts;
     }
 
-    return JSON.stringify(runnerResult.lhr);
+    // pre process the LHR for proto
+    return JSON.stringify(preprocessor.processForProto(runnerResult.lhr));
   } catch (err) {
     // If an error ruined the entire lighthouse run, attempt to return a meaningful error.
     let runtimeError;

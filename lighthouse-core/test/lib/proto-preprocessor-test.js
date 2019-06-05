@@ -13,7 +13,7 @@ describe('processing for proto', () => {
   it('doesn\'t modify the input object', () => {
     const input = JSON.parse(JSON.stringify(sampleJson));
     processForProto(input);
-    expect(input).toMatchObject(sampleJson);
+    expect(input).toEqual(sampleJson);
   });
 
   it('keeps only necessary configSettings', () => {
