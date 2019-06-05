@@ -80,15 +80,15 @@ function checkTimeSinceLastLongTask() {
 /**
  * @param {string=} selector Optional simple CSS selector to filter nodes on.
  *     Combinators are not supported.
- * @return {Array<Element>}
+ * @return {Array<HTMLElement>}
  */
 /* istanbul ignore next */
 function getElementsInDocument(selector) {
   const realMatchesFn = window.__ElementMatches || window.Element.prototype.matches;
-  /** @type {Array<Element>} */
+  /** @type {Array<HTMLElement>} */
   const results = [];
 
-  /** @param {NodeListOf<Element>} nodes */
+  /** @param {NodeListOf<HTMLElement>} nodes */
   const _findAllElements = nodes => {
     for (let i = 0, el; el = nodes[i]; ++i) {
       if (!selector || realMatchesFn.call(el, selector)) {
@@ -168,8 +168,7 @@ function getNodePath(node) {
     while (prevNode = node.previousSibling) {
       node = prevNode;
       // skip empty text nodes
-      if (node.nodeType === Node.TEXT_NODE && node.textContent &&
-        node.textContent.trim().length === 0) continue;
+      if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim().length === 0) continue;
       index++;
     }
     return index;
