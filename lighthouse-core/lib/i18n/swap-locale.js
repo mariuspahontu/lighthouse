@@ -5,11 +5,10 @@
  */
 'use strict';
 
-/* eslint-disable no-console, max-len */
-
 const _set = require('lodash.set');
 
 const i18n = require('./i18n.js');
+const LHError = require('../lh-error.js');
 
 /**
  * @fileoverview Use the lhr.i18n.icuMessagePaths object to change locales
@@ -44,7 +43,7 @@ const i18n = require('./i18n.js');
  * Returns a new LHR with all strings changed to the new `requestedLocale`.
  * @param {LH.Result} lhr
  * @param {LH.Locale} requestedLocale
- * @return {LH.Result}
+ * @return {{lhr: LH.Result, missingIcuMessageIds: string[]}}
  */
 function swapLocale(lhr, requestedLocale) {
   // Copy LHR to avoid mutating provided LHR.
@@ -73,7 +72,7 @@ function swapLocale(lhr, requestedLocale) {
         // Write string back into the LHR
         _set(lhr, path, formattedStr);
       } catch (err) {
-        if (err.message === 'No ICU message string to format') {
+        if (err.message === i18n._ICUMsgNotFoundMsg) {
           missingIcuMessageIds.push(icuMessageId);
         } else {
           throw err;
@@ -82,14 +81,13 @@ function swapLocale(lhr, requestedLocale) {
     }
   });
 
-  if (missingIcuMessageIds.length) {
-    console.error(`No message in locale (${locale}) found for:\n`, missingIcuMessageIds);
-  }
-
   lhr.i18n.rendererFormattedStrings = i18n.getRendererFormattedStrings(locale);
   // Tweak the config locale
   lhr.configSettings.locale = locale;
-  return lhr;
+  return {
+    lhr,
+    missingIcuMessageIds,
+  };
 }
 
 module.exports = swapLocale;

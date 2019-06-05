@@ -10,16 +10,10 @@ const swapLocale = require('../../../lib/i18n/swap-locale.js');
 const lhr = require('../../results/sample_v2.json');
 
 /* eslint-env jest */
-beforeEach(() => {
-  // silence console.error spam about messages not found
-  // eslint-disable-next-line no-console
-  console.error = jest.fn();
-});
-
 describe('swap-locale', () => {
   it('can change golden LHR english strings into spanish', () => {
     const lhrEn = /** @type {LH.Result} */ (JSON.parse(JSON.stringify(lhr)));
-    const lhrEs = swapLocale(lhrEn, 'es');
+    const lhrEs = swapLocale(lhrEn, 'es').lhr;
 
     // Basic replacement
     expect(lhrEn.audits.plugins.title).toEqual('Document avoids plugins');
@@ -38,11 +32,45 @@ describe('swap-locale', () => {
     const lhrEn = /** @type {LH.Result} */ (JSON.parse(JSON.stringify(lhr)));
 
     // via Spanish
-    const lhrEnEsRT = swapLocale(swapLocale(lhrEn, 'es'), 'en-US');
-    expect(lhrEnEsRT).toMatchObject(lhrEn);
+    const lhrEnEsRT = swapLocale(swapLocale(lhrEn, 'es').lhr, 'en-US').lhr;
+    expect(lhrEnEsRT).toEqual(lhrEn);
 
     // via Arabic
-    const lhrEnArRT = swapLocale(swapLocale(lhrEn, 'ar'), 'en-US');
-    expect(lhrEnArRT).toMatchObject(lhrEn);
+    const lhrEnArRT = swapLocale(swapLocale(lhrEn, 'ar').lhr, 'en-US').lhr;
+    expect(lhrEnArRT).toEqual(lhrEn);
+  });
+
+  it('leaves alone messages where there is no translation available', () => {
+    const miniLHR = {
+      audits: {
+        redirects: {
+          id: 'redirects',
+          title: 'Avoid multiple page redirects',
+        },
+        fakeaudit: {
+          id: 'fakeaudit',
+          title: 'An audit without translations',
+        },
+      },
+      configSettings: {
+        locale: 'en-US',
+      },
+      i18n: {
+        icuMessagePaths: {
+          'lighthouse-core/audits/redirects.js | title': ['audits.redirects.title'],
+          'lighthouse-core/audits/redirects.js | doesntExist': ['audits.redirects.doesntExist'],
+          'lighthouse-core/audits/fakeaudit.js | title': ['audits.fakeaudit.title'],
+        },
+      },
+    };
+    const {missingIcuMessageIds} = swapLocale(miniLHR, 'es');
+
+    // Updated strings are not found, so these remain in the original language
+    expect(missingIcuMessageIds).toMatchInlineSnapshot(`
+Array [
+  "lighthouse-core/audits/redirects.js | doesntExist",
+  "lighthouse-core/audits/fakeaudit.js | title",
+]
+`);
   });
 });
