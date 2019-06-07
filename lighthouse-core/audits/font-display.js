@@ -44,10 +44,11 @@ class FontDisplay extends Audit {
 
   /**
    * @param {LH.Artifacts} artifacts
+   * @return {Set<string>}
    */
   static findPassingFontDisplayDeclarations(artifacts) {
     /** @type {Set<string>} */
-    const passingURLs = new Set();
+    const failingURLs = new Set();
 
     // Go through all the stylesheets to find all @font-face declarations
     for (const stylesheet of artifacts.CSSUsage.stylesheets) {
@@ -59,14 +60,16 @@ class FontDisplay extends Audit {
       for (const declaration of fontFaceDeclarations) {
         // Find the font-display value by matching a single token, optionally surrounded by whitespace,
         // followed either by a semicolon or the end of a block.
-        const rawFontDisplay = declaration.match(/font-display\s*:\s*(\w+)\s*(;|\})/);
-        // If they didn't have a font-display property, it's the default, and it's failing; bail
-        if (!rawFontDisplay) continue;
-        // If they don't have one of the passing font-display values, it's failing; bail
-        const hasPassingFontDisplay = PASSING_FONT_DISPLAY_REGEX.test(rawFontDisplay[1]);
-        if (!hasPassingFontDisplay) continue;
+        const fontDisplayMatch = declaration.match(/font-display\s*:\s*(\w+)\s*(;|\})/);
+        const rawFontDisplay = (fontDisplayMatch && fontDisplayMatch[1]) || '';
+        const hasPassingFontDisplay = PASSING_FONT_DISPLAY_REGEX.test(rawFontDisplay);
+        // If they have one of the passing font-display values, it's fine; bail
+        if (rawFontDisplay && hasPassingFontDisplay) continue;
 
-        // If it's passing, we'll try to find the URL it's referencing.
+        // If they didn't have a font-display value or it wasn't set it a passing value, we need
+        // to flag it as a failing font...
+
+        // We'll try to find the URL it's referencing.
         const rawFontURLs = declaration.match(CSS_URL_GLOBAL_REGEX);
         // If no URLs, we can't really do anything; bail
         if (!rawFontURLs) continue;
@@ -82,13 +85,14 @@ class FontDisplay extends Audit {
 
             return s;
           });
-        // Convert the relative CSS URL to an absolute URL and add it to the passing set
+
+        // Convert the relative CSS URL to an absolute URL and add it to the failing set.
         for (const relativeURL of relativeURLs) {
           try {
             const relativeRoot = URL.isValid(stylesheet.header.sourceURL) ?
               stylesheet.header.sourceURL : artifacts.URL.finalUrl;
             const absoluteURL = new URL(relativeURL, relativeRoot);
-            passingURLs.add(absoluteURL.href);
+            failingURLs.add(absoluteURL.href);
           } catch (err) {
             Sentry.captureException(err, {tags: {audit: this.meta.id}});
           }
@@ -96,7 +100,7 @@ class FontDisplay extends Audit {
       }
     }
 
-    return passingURLs;
+    return failingURLs;
   }
 
   /**
@@ -107,13 +111,13 @@ class FontDisplay extends Audit {
   static async audit(artifacts, context) {
     const devtoolsLogs = artifacts.devtoolsLogs[this.DEFAULT_PASS];
     const networkRecords = await NetworkRecords.request(devtoolsLogs, context);
-    const passingFontURLs = FontDisplay.findPassingFontDisplayDeclarations(artifacts);
+    const failingFontURLs = FontDisplay.findPassingFontDisplayDeclarations(artifacts);
 
     const results = networkRecords
       // Find all fonts...
       .filter(record => record.resourceType === 'Font')
-      // ...that don't have a passing font-display value
-      .filter(record => !passingFontURLs.has(record.url))
+      // ...that have a failing font-display value
+      .filter(record => failingFontURLs.has(record.url))
       // ...and that aren't data URLs, the blocking concern doesn't really apply
       .filter(record => !/^data:/.test(record.url))
       .filter(record => !/^blob:/.test(record.url))

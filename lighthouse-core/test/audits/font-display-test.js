@@ -282,4 +282,19 @@ describe('Performance: Font Display audit', () => {
     expect(result.details.items).toEqual([]);
     assert.strictEqual(result.score, 1);
   });
+
+  it('shuold not flag a URL for which there is not @font-face at all', async () => {
+    // Sometimes the content does not come through, see https://github.com/GoogleChrome/lighthouse/issues/8493
+    stylesheet.content = ``;
+
+    networkRecords = [{
+      url: `https://example.com/foo/bar/font-0.woff`,
+      endTime: 2, startTime: 1,
+      resourceType: 'Font',
+    }];
+
+    const result = await FontDisplayAudit.audit(getArtifacts(), context);
+    expect(result.details.items).toEqual([]);
+    assert.strictEqual(result.score, 1);
+  });
 });
