@@ -1488,7 +1488,7 @@ class Driver {
   }
 
   /**
-   * @param {LH.Crdp.Network.Cookies|null} cookies key/value pairs of HTTP Cookies.
+   * @param {LH.Crdp.Network.CookieParam[]|null} cookies key/value pairs of HTTP Cookies.
    * @return {Promise<void>}
    */
   async setCookies(cookies) {
