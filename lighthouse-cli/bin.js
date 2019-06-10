@@ -122,6 +122,21 @@ async function begin() {
     cliFlags.extraHeaders = JSON.parse(extraHeadersStr);
   }
 
+  if (cliFlags.extraCookies) {
+    // TODO: LH.Flags.extraCookies is actually a string at this point, but needs to be
+    // copied over to LH.Settings.extraCookies, which is LH.Crdp.Network.Cookies. Force
+    // the conversion here, but long term either the CLI flag or the setting should have
+    // a different name.
+    // @ts-ignore
+    let extraCookiesStr = /** @type {string} */ (cliFlags.extraCookies);
+    // If not a JSON array, assume it's a path to a JSON file.
+    if (extraCookiesStr.substr(0, 1) !== '[') {
+      extraCookiesStr = fs.readFileSync(extraCookiesStr, 'utf-8');
+    }
+
+    cliFlags.extraCookies = JSON.parse(extraCookiesStr);
+  }
+
   if (cliFlags.precomputedLanternDataPath) {
     const lanternDataStr = fs.readFileSync(cliFlags.precomputedLanternDataPath, 'utf8');
     /** @type {LH.PrecomputedLanternData} */

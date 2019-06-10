@@ -40,7 +40,7 @@ const fakeDriver = require('./fake-driver.js');
 const fakeDriverUsingRealMobileDevice = fakeDriver.fakeDriverUsingRealMobileDevice;
 
 function getMockedEmulationDriver(emulationFn, netThrottleFn, cpuThrottleFn,
-  blockUrlFn, extraHeadersFn) {
+  blockUrlFn, extraHeadersFn, extraCookiesFn) {
   const Driver = require('../../gather/driver.js');
   const Connection = require('../../gather/connections/connection.js');
   const EmulationDriver = class extends Driver {
@@ -80,6 +80,9 @@ function getMockedEmulationDriver(emulationFn, netThrottleFn, cpuThrottleFn,
           break;
         case 'Network.setExtraHTTPHeaders':
           fn = extraHeadersFn;
+          break;
+        case 'Network.setCookies':
+          fn = extraCookiesFn;
           break;
         default:
           fn = null;
@@ -393,6 +396,7 @@ describe('GatherRunner', function() {
       setThrottling: asyncFunc,
       blockUrlPatterns: asyncFunc,
       setExtraHTTPHeaders: asyncFunc,
+      setCookies: asyncFunc,
       endTrace: asyncFunc,
       endDevtoolsLog: () => [],
       getBrowserVersion: async () => ({userAgent: ''}),
@@ -575,6 +579,28 @@ describe('GatherRunner', function() {
     }).then(() => assert.deepStrictEqual(
         receivedHeaders,
         headers
+      ));
+  });
+
+  it('tells the driver to set additional cookies when extraCookies flag is given', () => {
+    let receivedCookies = null;
+    const driver = getMockedEmulationDriver(null, null, null, null, null, params => {
+      receivedCookies = params.cookies;
+    });
+    const cookies = [{
+      'name': 'cookie1',
+      'value': 'monster',
+    }];
+
+    return GatherRunner.setupPassNetwork({
+      driver,
+      settings: {
+        extraCookies: cookies,
+      },
+      passConfig: {gatherers: []},
+    }).then(() => assert.deepStrictEqual(
+        receivedCookies,
+        cookies
       ));
   });
 

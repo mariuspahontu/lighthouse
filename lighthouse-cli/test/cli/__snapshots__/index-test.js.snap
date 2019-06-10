@@ -1371,6 +1371,7 @@ Object {
     "channel": "cli",
     "disableStorageReset": false,
     "emulatedFormFactor": "mobile",
+    "extraCookies": null,
     "extraHeaders": null,
     "gatherMode": false,
     "locale": "en-US",
