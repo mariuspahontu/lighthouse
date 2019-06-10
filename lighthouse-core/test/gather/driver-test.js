@@ -412,7 +412,7 @@ describe('.setExtraHTTPHeaders', () => {
     );
   });
 
-  it('should not Network.setExtraHTTPHeaders when there are extra-headers', async () => {
+  it('should not Network.setExtraHTTPHeaders when there aren\'t extra-headers', async () => {
     connectionStub.sendCommand = createMockSendCommandFn();
     await driver.setExtraHTTPHeaders();
 
@@ -438,7 +438,7 @@ describe('.setCookies', () => {
     );
   });
 
-  it('should not call Network.setCookies when there are extra-headers', async () => {
+  it('should not call Network.setCookies when there aren\'t extra-cookies', async () => {
     connectionStub.sendCommand = createMockSendCommandFn();
     await driver.setCookies();
 
