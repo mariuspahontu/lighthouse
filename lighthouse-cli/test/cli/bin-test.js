@@ -180,7 +180,7 @@ describe('CLI bin', function() {
     });
 
     it('should read extra cookies from file', async () => {
-      const headersFile = require.resolve('../fixtures/extra-headers/valid.json');
+      const headersFile = require.resolve('../fixtures/extra-cookies/valid.json');
       // @ts-ignore - see TODO: in bin.js
       cliFlags = {...cliFlags, extraCookies: headersFile};
       await bin.begin();
