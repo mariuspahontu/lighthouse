@@ -60,7 +60,6 @@ const defaultSettings = {
   blockedUrlPatterns: null,
   additionalTraceCategories: null,
   extraHeaders: null,
-  extraCookies: null,
   precomputedLanternData: null,
   onlyAudits: null,
   onlyCategories: null,

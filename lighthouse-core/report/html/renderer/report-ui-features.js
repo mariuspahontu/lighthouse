@@ -234,12 +234,11 @@ class ReportUIFeatures {
     tablesWithUrls.forEach((tableEl, index) => {
       const urlItems = this._getUrlItems(tableEl);
       const thirdPartyRows = this._getThirdPartyRows(tableEl, urlItems, this.json.finalUrl);
-      // If all or none of the rows are 3rd party, no checkbox!
-      if (thirdPartyRows.size === urlItems.length || !thirdPartyRows.size) return;
 
       // create input box
       const filterTemplate = this._dom.cloneTemplate('#tmpl-lh-3p-filter', this._templateContext);
-      const filterInput = this._dom.find('input', filterTemplate);
+      const filterInput =
+        /** @type {HTMLInputElement} */ (this._dom.find('input', filterTemplate));
       const id = `lh-3p-filter-label--${index}`;
 
       filterInput.id = id;
@@ -264,6 +263,12 @@ class ReportUIFeatures {
           `${thirdPartyRows.size}`;
       this._dom.find('.lh-3p-ui-string', filterTemplate).textContent =
           Util.UIStrings.thirdPartyResourcesLabel;
+
+      // If all or none of the rows are 3rd party, disable the checkbox.
+      if (thirdPartyRows.size === urlItems.length || !thirdPartyRows.size) {
+        filterInput.disabled = true;
+        filterInput.checked = thirdPartyRows.size === urlItems.length;
+      }
 
       // Finally, add checkbox to the DOM.
       if (!tableEl.parentNode) return; // Keep tsc happy.
@@ -314,9 +319,8 @@ class ReportUIFeatures {
     this.scoreScaleEl = this._dom.find('.lh-scorescale', this._document);
     this.stickyHeaderEl = this._dom.find('.lh-sticky-header', this._document);
 
-    // Position highlighter at first gauge; will be transformed on scroll.
-    const firstGauge = this._dom.find('.lh-gauge__wrapper', this.stickyHeaderEl);
-    this.highlightEl = this._dom.createChildOf(firstGauge, 'div', 'lh-highlighter');
+    // Highlighter will be absolutely positioned at first gauge, then transformed on scroll.
+    this.highlightEl = this._dom.createChildOf(this.stickyHeaderEl, 'div', 'lh-highlighter');
   }
 
   /**
@@ -325,7 +329,7 @@ class ReportUIFeatures {
    */
   onCopy(e) {
     // Only handle copy button presses (e.g. ignore the user copying page text).
-    if (this._copyAttempt) {
+    if (this._copyAttempt && e.clipboardData) {
       // We want to write our own data to the clipboard, not the user's text selection.
       e.preventDefault();
       e.clipboardData.setData('text/plain', JSON.stringify(this.json, null, 2));
@@ -421,12 +425,12 @@ class ReportUIFeatures {
       case 'print-summary':
         this.collapseAllDetails();
         this.closeToolsDropdown();
-        self.print();
+        this._print();
         break;
       case 'print-expanded':
         this.expandAllDetails();
         this.closeToolsDropdown();
-        self.print();
+        this._print();
         break;
       case 'save-json': {
         const jsonStr = JSON.stringify(this.json, null, 2);
@@ -461,6 +465,10 @@ class ReportUIFeatures {
 
     this.closeToolsDropdown();
     this._document.removeEventListener('keydown', this.onKeyDown);
+  }
+
+  _print() {
+    self.print();
   }
 
   /**

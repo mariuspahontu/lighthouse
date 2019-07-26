@@ -39,7 +39,7 @@ declare global {
   type NonVoid<T> = T extends void ? never : T;
 
   /** Remove properties K from T. */
-  type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+  type StrictOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
   /** Obtain the type of the first parameter of a function. */
   type FirstParamType<T extends (arg1: any, ...args: any[]) => any> =
@@ -74,7 +74,7 @@ declare global {
       serverResponseTimeByOrigin: {[origin: string]: number};
     }
 
-    export type Locale = 'en-US'|'en'|'en-AU'|'en-GB'|'en-IE'|'en-SG'|'en-ZA'|'en-IN'|'ar-XB'|'ar'|'bg'|'bs'|'ca'|'cs'|'da'|'de'|'el'|'en-XA'|'es'|'fi'|'fil'|'fr'|'he'|'hi'|'hr'|'hu'|'gsw'|'id'|'in'|'it'|'iw'|'ja'|'ko'|'ln'|'lt'|'lv'|'mo'|'nl'|'nb'|'no'|'pl'|'pt'|'pt-PT'|'ro'|'ru'|'sk'|'sl'|'sr'|'sr-Latn'|'sv'|'ta'|'te'|'th'|'tl'|'tr'|'uk'|'vi'|'zh'|'zh-HK'|'zh-TW';
+    export type Locale = 'en-US'|'en'|'en-AU'|'en-GB'|'en-IE'|'en-SG'|'en-ZA'|'en-IN'|'ar-XB'|'ar'|'bg'|'bs'|'ca'|'cs'|'da'|'de'|'el'|'en-XA'|'en-XL'|'es'|'es-419'|'es-AR'|'es-BO'|'es-BR'|'es-BZ'|'es-CL'|'es-CO'|'es-CR'|'es-CU'|'es-DO'|'es-EC'|'es-GT'|'es-HN'|'es-MX'|'es-NI'|'es-PA'|'es-PE'|'es-PR'|'es-PY'|'es-SV'|'es-US'|'es-UY'|'es-VE'|'fi'|'fil'|'fr'|'he'|'hi'|'hr'|'hu'|'gsw'|'id'|'in'|'it'|'iw'|'ja'|'ko'|'ln'|'lt'|'lv'|'mo'|'nl'|'nb'|'no'|'pl'|'pt'|'pt-PT'|'ro'|'ru'|'sk'|'sl'|'sr'|'sr-Latn'|'sv'|'ta'|'te'|'th'|'tl'|'tr'|'uk'|'vi'|'zh'|'zh-HK'|'zh-TW';
 
     export type OutputMode = 'json' | 'html' | 'csv';
 
@@ -113,8 +113,6 @@ declare global {
       onlyCategories?: string[] | null;
       /** If present, the run should skip this list of audits. */
       skipAudits?: string[] | null;
-      /** List of extra HTTP Cookies to include. */
-      extraCookies?: Crdp.Network.CookieParam[] | null; // See extraCookies TODO in bin.js
       /** List of extra HTTP Headers to include. */
       extraHeaders?: Crdp.Network.Headers | null; // See extraHeaders TODO in bin.js
       /** How Lighthouse was run, e.g. from the Chrome extension or from the npm module */

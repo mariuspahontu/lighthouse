@@ -10,78 +10,13 @@ const Connection = require('../../gather/connections/connection.js');
 const Element = require('../../lib/element.js');
 const EventEmitter = require('events').EventEmitter;
 const {protocolGetVersionResponse} = require('./fake-driver.js');
+const {createMockSendCommandFn, createMockOnceFn} = require('./mock-commands.js');
 
 const redirectDevtoolsLog = require('../fixtures/wikipedia-redirect.devtoolslog.json');
 
 /* eslint-env jest */
 
 jest.useFakeTimers();
-
-/**
- * Creates a jest mock function whose implementation consumes mocked protocol responses matching the
- * requested command in the order they were mocked.
- *
- * It is decorated with two methods:
- *    - `mockResponse` which pushes protocol message responses for consumption
- *    - `findInvocation` which asserts that `sendCommand` was invoked with the given command and
- *      returns the protocol message argument.
- */
-function createMockSendCommandFn() {
-  const mockResponses = [];
-  const mockFn = jest.fn().mockImplementation(command => {
-    const indexOfResponse = mockResponses.findIndex(entry => entry.command === command);
-    if (indexOfResponse === -1) throw new Error(`${command} unimplemented`);
-    const {response, delay} = mockResponses[indexOfResponse];
-    mockResponses.splice(indexOfResponse, 1);
-    if (delay) return new Promise(resolve => setTimeout(() => resolve(response), delay));
-    return Promise.resolve(response);
-  });
-
-  mockFn.mockResponse = (command, response, delay) => {
-    mockResponses.push({command, response, delay});
-    return mockFn;
-  };
-
-  mockFn.findInvocation = command => {
-    expect(mockFn).toHaveBeenCalledWith(command, expect.anything());
-    return mockFn.mock.calls.find(call => call[0] === command)[1];
-  };
-
-  return mockFn;
-}
-
-/**
- * Creates a jest mock function whose implementation invokes `.on`/`.once` listeners after a setTimeout tick.
- * Closely mirrors `createMockSendCommandFn`.
- *
- * It is decorated with two methods:
- *    - `mockEvent` which pushes protocol event payload for consumption
- *    - `findListener` which asserts that `on` was invoked with the given event name and
- *      returns the listener .
- */
-function createMockOnceFn() {
-  const mockEvents = [];
-  const mockFn = jest.fn().mockImplementation((eventName, listener) => {
-    const indexOfResponse = mockEvents.findIndex(entry => entry.event === eventName);
-    if (indexOfResponse === -1) return;
-    const {response} = mockEvents[indexOfResponse];
-    mockEvents.splice(indexOfResponse, 1);
-    // Wait a tick because real events never fire immediately
-    setTimeout(() => listener(response), 0);
-  });
-
-  mockFn.mockEvent = (event, response) => {
-    mockEvents.push({event, response});
-    return mockFn;
-  };
-
-  mockFn.findListener = event => {
-    expect(mockFn).toHaveBeenCalledWith(event, expect.anything());
-    return mockFn.mock.calls.find(call => call[0] === event)[1];
-  };
-
-  return mockFn;
-}
 
 /**
  * Transparently augments the promise with inspectable functions to query its state.
@@ -412,40 +347,13 @@ describe('.setExtraHTTPHeaders', () => {
     );
   });
 
-  it('should not Network.setExtraHTTPHeaders when there aren\'t extra-headers', async () => {
+  it('should Network.setExtraHTTPHeaders when there are extra-headers', async () => {
     connectionStub.sendCommand = createMockSendCommandFn();
     await driver.setExtraHTTPHeaders();
 
     expect(connectionStub.sendCommand).not.toHaveBeenCalled();
   });
 });
-
-describe('.setCookies', () => {
-  it('should call Network.setCookies when there are extra-cookies', async () => {
-    connectionStub.sendCommand = createMockSendCommandFn().mockResponse(
-      'Network.setCookies',
-      {}
-    );
-
-    await driver.setCookies([{
-      'name': 'cookie1',
-      'value': 'monster',
-    }]);
-
-    expect(connectionStub.sendCommand).toHaveBeenCalledWith(
-      'Network.setCookies',
-      expect.anything()
-    );
-  });
-
-  it('should not call Network.setCookies when there aren\'t extra-cookies', async () => {
-    connectionStub.sendCommand = createMockSendCommandFn();
-    await driver.setCookies();
-
-    expect(connectionStub.sendCommand).not.toHaveBeenCalled();
-  });
-});
-
 
 describe('.getAppManifest', () => {
   it('should return null when no manifest', async () => {
