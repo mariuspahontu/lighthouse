@@ -476,7 +476,7 @@ class Driver {
     const contextId = options.useIsolation ? await this._getOrCreateIsolatedContextId() : undefined;
 
     try {
-      // `await` is not redunant here because we want to `catch` the async errors
+      // `await` is not redundant here because we want to `catch` the async errors
       return await this._evaluateInContext(expression, contextId);
     } catch (err) {
       // If we were using isolation and the context disappeared on us, retry one more time.
@@ -1486,19 +1486,6 @@ class Driver {
 
     return this.sendCommand('Network.setExtraHTTPHeaders', {headers});
   }
-
-  /**
-   * @param {LH.Crdp.Network.CookieParam[]|null} cookies key/value pairs of HTTP Cookies.
-   * @return {Promise<void>}
-   */
-  async setCookies(cookies) {
-    if (!cookies) {
-      return;
-    }
-
-    return this.sendCommand('Network.setCookies', {cookies});
-  }
-
 
   /**
    * @param {string} url
